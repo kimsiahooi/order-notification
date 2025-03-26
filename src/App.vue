@@ -18,7 +18,7 @@ const showNotification = () => {
   if (orders.value.length && body?.classList.contains("home")) {
     setInterval(() => {
       const randomNumber = Math.floor(Math.random() * orders.value.length);
-      const result = orders.value.splice(randomNumber, 1)[0];
+      const result = orders.value.find((_, index) => index === randomNumber);
 
       toast({
         description: h("div", { class: "flex items-center gap-3" }, [
@@ -27,8 +27,8 @@ const showNotification = () => {
             null,
             h("img", {
               class: "size-16 object-cover",
-              src: result.line_items[0].image.src,
-              alt: result.line_items[0].name,
+              src: result?.line_items[0].image.src,
+              alt: result?.line_items[0].name,
             })
           ),
           h("div", { class: "flex-1" }, [
@@ -36,7 +36,7 @@ const showNotification = () => {
               "p",
               null,
               `${faker.person.fullName({ sex: "female" })} just bought ${
-                result.line_items[0].name
+                result?.line_items[0].name
               }.`
             ),
             h(
