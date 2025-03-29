@@ -8,14 +8,26 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { h, onMounted, ref } from "vue";
 import type { Order } from "./types/Order";
 import { faker } from "@faker-js/faker";
+import { formatDistanceToNowStrict } from "date-fns";
+
+interface Setting {
+  total: number;
+  loop_time: number;
+  real_data: boolean;
+  is_active: boolean;
+}
 
 const { toast } = useToast();
 
 const orders = ref<Order[]>([]);
 
-const showNotification = () => {
+const showNotification = (setting: Setting) => {
   const body = document.querySelector("body");
-  if (orders.value.length && body?.classList.contains("home")) {
+  if (
+    orders.value.length &&
+    body?.classList.contains("home") &&
+    setting.is_active
+  ) {
     setInterval(() => {
       const randomNumber = Math.floor(Math.random() * orders.value.length);
       const result = orders.value.splice(randomNumber, 1)[0];
@@ -35,37 +47,41 @@ const showNotification = () => {
             h(
               "p",
               null,
-              `${faker.person.fullName({ sex: "female" })} just bought ${
-                result.line_items[0].name
-              }.`
+              `${
+                setting.real_data
+                  ? result.billing.first_name + result.billing.last_name
+                  : faker.person.fullName({ sex: "female" })
+              } just bought ${result.line_items[0].name}.`
             ),
             h(
               "p",
               { class: "mt-2" },
-              `${Math.floor(Math.random() * 8) + 2} hours ago`
+              setting.real_data
+                ? `${formatDistanceToNowStrict(result.date_created)} ago`
+                : `${Math.floor(Math.random() * 8) + 2} hours ago`
             ),
           ]),
         ]),
       });
-    }, 15000);
+    }, setting.loop_time);
   }
 };
 
 onMounted(async () => {
   try {
     const response = await fetch(
-      "https://cc.kimsiah.com/api/order-notifications?per_page=100"
+      "https://cc.kimsiah.com/api/features/fake-notifications"
     );
 
     if (!response.ok) {
       throw new Error("Error fetching orders");
     }
 
-    const { data } = await response.json();
+    const { data, setting } = await response.json();
 
     orders.value = data;
 
-    showNotification();
+    showNotification(setting);
   } catch (error) {
     console.error(error);
   }
